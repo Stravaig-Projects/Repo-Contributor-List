@@ -1,0 +1,3 @@
+- Find willing test subjects
+- Make them coffee
+- Collate data
