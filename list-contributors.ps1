@@ -1,3 +1,15 @@
+param
+(
+    [parameter(Mandatory=$false)]
+    [string]$OutputFile = "contributors.md",
+
+    [parameter(Mandatory=$false)]
+    [string]$DateTimeFormat = "dddd, d MMMM, yyyy @ HH:mm:ss zzz",
+
+    [parameter(Mandatory=$false)]
+    [string]$TimeFormat = "HH:mm:ss zzz"
+)
+
 function Test-StringEquality($A, $B)
 {
     $result = [string]::Compare($A, $B, $true) -eq 0
@@ -32,10 +44,10 @@ Remove-Item .\raw-contributors.csv
 $contributors = @();
 for($i = 0; $i -lt $commits.Length; $i++)
 {
-    Write-Host
-    Write-Host "Loop iteration $i :"
+    #Write-Host
+    #Write-Host "Loop iteration $i :"
     $nextCommit = $commits[$i];
-    Write-Host $nextCommit;
+    #Write-Host $nextCommit;
     $commitTime = [DateTime]::ParseExact($nextCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture);
     $contributor = $contributors.Where({Test-Contributor -Contributor $_ -Commit $nextCommit}, "First", 1)[0]
     if ($null -eq $contributor)
@@ -65,4 +77,40 @@ for($i = 0; $i -lt $commits.Length; $i++)
         $contributor.CommitCount += 1;
     }
 }    
+
+
+"# Contributors" | Out-File $OutputFile -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
+"This is a list of all the contributors to this repository" | Out-File $OutputFile -Append -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
+foreach($contributor in $contributors)
+{
+    $name = $contributor.Names[0];
+    $aka = ""
+    if ($contributor.Names.Length -gt 1)
+    {
+        $aka = " (AKA ";
+        $isFirst = $true;
+        for($i = 1; $i -lt $contributor.Names.Length; $i++)
+        {
+            if (-not $isFirst) { $aka += ", " }
+            $aka += "*"+$contributor.Names[$i]+"*";
+        }
+        $aka += ")"
+    }
+    $numCommits = $contributor.CommitCount
+    $commits = "commit"; if ($numCommits -gt 1) { $commits += "s" }
+    $start = $contributor.FirstCommit.ToString($DateTimeFormat);
+    if ($contributor.FirstCommit.Date -eq $contributor.LastCommit.Date)
+    {
+        $end = $contributor.LastCommit.ToString($TimeFormat);
+    }
+    else {
+        $end = $contributor.LastCommit.ToString($DateTimeFormat);        
+    }
+    "**$name**$aka contributed $numCommits $commits from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
+    "" | Out-File $OutputFile -Append -Encoding utf8
+}
+
+
 Write-Output $contributors
