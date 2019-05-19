@@ -6,5 +6,6 @@ The scripts looks through the repository history for the authors. The script ass
 > * "Colin Mackay" with email colin@mackay.example.com
 > * "Colin Mackay" with email colin@users.noreply.github.com
 > * "Colin A. Mackay" with email colin@users.noreply.github.com
+
 ... are all one person.
 
