@@ -1,4 +1,4 @@
-# This script is licences under an MIT licence. Licence details can be found at
+# This script is licenced under an MIT licence. Licence details can be found at
 # https://github.com/Stravaig-Projects/Repo-Contributor-List/blob/master/LICENSE
 # Please keep this licence notice link intact.
 #
