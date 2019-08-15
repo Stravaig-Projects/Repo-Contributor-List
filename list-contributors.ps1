@@ -102,6 +102,7 @@ foreach($contributor in $contributors)
         {
             if (-not $isFirst) { $aka += ", " }
             $aka += "*"+$contributor.Names[$i]+"*";
+            $isFirst = $false
         }
         $aka += ")"
     }
