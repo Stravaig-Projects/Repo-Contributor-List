@@ -101,27 +101,29 @@ Write-Host "Is Descending : $isDescending"
 Switch($SortOrder)
 {
     "Name" { 
-        Write-Host "Sorting by Primary Name"
-        $contributors = $contributors | Sort-Object PrimaryName -Descending:$isDescending; 
+        $contributors = $contributors | Sort-Object PrimaryName -Descending:$isDescending;
+        $textOrderBy = "contributor name";
     }
     "FirstCommit" {
-        Write-Host "Sorting by First Commit"
         $contributors = $contributors | Sort-Object FirstCommit -Descending:$isDescending; 
+        $textOrderBy = "first commit date";
     }
     "LastCommit" {
-        Write-Host "Sorting by Last Commit"
         $contributors = $contributors | Sort-Object LastCommit -Descending:$isDescending; 
+        $textOrderBy = "last commit date";
     }
-    "LastCommit" {
-        Write-Host "Sorting by Commit Count"
+    "CommitCount" {
         $contributors = $contributors | Sort-Object CommitCount -Descending:$isDescending; 
+        $textOrderBy = "number of commits";
     }
 }
 
 
 "# Contributors" | Out-File $OutputFile -Encoding utf8
 "" | Out-File $OutputFile -Append -Encoding utf8
-"This is a list of all the contributors to this repository" | Out-File $OutputFile -Append -Encoding utf8
+$line = "This is a list of all the contributors to this repository in "
+$line += $SortDirection.ToLower();
+"$line order by the $textOrderBy." | Out-File $OutputFile -Append -Encoding utf8
 "" | Out-File $OutputFile -Append -Encoding utf8
 foreach($contributor in $contributors)
 {
@@ -153,5 +155,4 @@ foreach($contributor in $contributors)
     "" | Out-File $OutputFile -Append -Encoding utf8
 }
 
-Set-Variable -Name "OutContrib" -Value $contributors -Visibility public -Scope Global -PassThru
 Write-Output $contributors
