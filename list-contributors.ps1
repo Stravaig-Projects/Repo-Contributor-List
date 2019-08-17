@@ -108,7 +108,6 @@ for($i = 0; $i -lt $commits.Length; $i++)
 Write-Progress -Activity "Processing" -PercentComplete 100 -Completed
 
 $isDescending = $SortDirection -eq "Descending";
-Write-Host "Is Descending : $isDescending"
 Switch($SortOrder)
 {
     "Name" { 
@@ -128,7 +127,6 @@ Switch($SortOrder)
         $textOrderBy = "number of commits";
     }
 }
-
 
 "# Contributors" | Out-File $OutputFile -Encoding utf8
 "" | Out-File $OutputFile -Append -Encoding utf8
