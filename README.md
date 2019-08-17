@@ -28,8 +28,10 @@ You can also run it as part of a build script to automatically create a list of 
 ### Options
 
 * `-OutputFile` is the path to the file you want to output the results to. By default it will create/overwrite a file called `contributors.md` in the current directory.
-* `-DateTimeFormat` is the format that the date and time will appear in the output file. The default value is `dddd, d MMMM, yyyy @ HH:mm:ss zzz`
-* `-TimeFormat` is the format that the time will appear in the output file. The default value is `HH:mm:ss zzz`
+* `-DateTimeFormat` is the format that the date and time will appear in the output file. Defaults to `dddd, d MMMM, yyyy @ HH:mm:ss zzz` if omitted.
+* `-TimeFormat` is the format that the time will appear in the output file. Defaults to `HH:mm:ss zzz` if omitted.
+* `-SortOrder` orders the contributors list in the output file. It can be one of `Name`, `FirstCommit`, `LastCommit`, or `CommitCount`. Defaults to `Name` if omitted.
+* `-SortDirection` determines the direction of the sort. It can be either `Ascending` or `Descending`. Defaults to `Ascending` if omitted.
 
 ## And finally...
 
