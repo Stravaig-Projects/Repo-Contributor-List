@@ -56,11 +56,21 @@ function Test-Contributor($contributor, $commit)
 & git log --format="\`"%ai\`",\`"%an\`",\`"%ae\`"" > raw-contributors.csv
 $commits = Import-Csv raw-contributors.csv -Header Time,Name,Email
 Remove-Item .\raw-contributors.csv
+
+$commitsPerPercentPoint = [Math]::Ceiling($commits.Length / 100)
+$totalCommits = $commits.Length;
 $contributors = @();
 for($i = 0; $i -lt $commits.Length; $i++)
 {
     $nextCommit = $commits[$i];
     $commitTime = [DateTime]::ParseExact($nextCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture);
+
+    if ($i % $commitsPerPercentPoint -eq 0)
+    {
+        $percent = [Math]::Floor($i / $commits.Length * 100);
+        Write-Progress -Activity "Processing" -CurrentOperation "Commit $i of $totalCommits" -PercentComplete $percent
+    }
+
     $contributor = $contributors.Where({Test-Contributor -Contributor $_ -Commit $nextCommit}, "First", 1)[0]
     if ($null -eq $contributor)
     {
@@ -95,6 +105,7 @@ for($i = 0; $i -lt $commits.Length; $i++)
         $contributor.CommitCount += 1;
     }
 }
+Write-Progress -Activity "Processing" -PercentComplete 100 -Completed
 
 $isDescending = $SortDirection -eq "Descending";
 Write-Host "Is Descending : $isDescending"
@@ -154,5 +165,3 @@ foreach($contributor in $contributors)
     "**$name**$aka contributed $numCommits $commits from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
     "" | Out-File $OutputFile -Append -Encoding utf8
 }
-
-Write-Output $contributors
