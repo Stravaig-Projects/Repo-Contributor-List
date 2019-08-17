@@ -139,13 +139,10 @@ function Get-InitialContributors($akaFilePath)
         $result += $contributor;
     }
 
-
     return (,$result);
 }
 
 $contributors = Get-InitialContributors($AkaFilePath);
-Write-Output $contributors
-Write-Output "-----------------------------"
 & git log --format="\`"%ai\`",\`"%an\`",\`"%ae\`"" > raw-contributors.csv
 $commits = Import-Csv raw-contributors.csv -Header Time,Name,Email
 Remove-Item .\raw-contributors.csv
@@ -258,5 +255,3 @@ foreach($contributor in $contributors)
     "**$name**$aka contributed $numCommits $commits from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
     "" | Out-File $OutputFile -Append -Encoding utf8
 }
-
-Write-Output $contributors;
