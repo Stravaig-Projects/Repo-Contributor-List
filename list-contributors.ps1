@@ -14,7 +14,15 @@ param
     [string]$DateTimeFormat = "dddd, d MMMM, yyyy @ HH:mm:ss zzz",
 
     [parameter(Mandatory=$false)]
-    [string]$TimeFormat = "HH:mm:ss zzz"
+    [string]$TimeFormat = "HH:mm:ss zzz",
+
+    [parameter(Mandatory=$false)]
+    [ValidateSet("Name", "FirstCommit", "LastCommit", "CommitCount")]
+    [string]$SortOrder = "Name",
+
+    [parameter(Mandatory=$false)]
+    [ValidateSet("Ascending", "Descending")]
+    [string]$SortDirection = "Ascending"
 )
 
 function Test-StringEquality($A, $B)
@@ -51,15 +59,18 @@ Remove-Item .\raw-contributors.csv
 $contributors = @();
 for($i = 0; $i -lt $commits.Length; $i++)
 {
-    #Write-Host
-    #Write-Host "Loop iteration $i :"
     $nextCommit = $commits[$i];
-    #Write-Host $nextCommit;
     $commitTime = [DateTime]::ParseExact($nextCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture);
     $contributor = $contributors.Where({Test-Contributor -Contributor $_ -Commit $nextCommit}, "First", 1)[0]
     if ($null -eq $contributor)
     {
-        $contributor = New-Object -TypeName PSObject -Property @{Names=@($nextCommit.Name); Emails=@($nextCommit.Email); FirstCommit=$commitTime; LastCommit=$commitTime; CommitCount=1};
+        $contributor = New-Object -TypeName PSObject -Property @{
+            Names=@($nextCommit.Name);
+            PrimaryName = $nextCommit.Name;
+            Emails=@($nextCommit.Email); 
+            FirstCommit=$commitTime; 
+            LastCommit=$commitTime; 
+            CommitCount=1};
         $contributors += $contributor;
     }
     else 
@@ -83,16 +94,40 @@ for($i = 0; $i -lt $commits.Length; $i++)
         }
         $contributor.CommitCount += 1;
     }
-}    
+}
+
+$isDescending = $SortDirection -eq "Descending";
+Write-Host "Is Descending : $isDescending"
+Switch($SortOrder)
+{
+    "Name" { 
+        $contributors = $contributors | Sort-Object PrimaryName -Descending:$isDescending;
+        $textOrderBy = "contributor name";
+    }
+    "FirstCommit" {
+        $contributors = $contributors | Sort-Object FirstCommit -Descending:$isDescending; 
+        $textOrderBy = "first commit date";
+    }
+    "LastCommit" {
+        $contributors = $contributors | Sort-Object LastCommit -Descending:$isDescending; 
+        $textOrderBy = "last commit date";
+    }
+    "CommitCount" {
+        $contributors = $contributors | Sort-Object CommitCount -Descending:$isDescending; 
+        $textOrderBy = "number of commits";
+    }
+}
 
 
 "# Contributors" | Out-File $OutputFile -Encoding utf8
 "" | Out-File $OutputFile -Append -Encoding utf8
-"This is a list of all the contributors to this repository" | Out-File $OutputFile -Append -Encoding utf8
+$line = "This is a list of all the contributors to this repository in "
+$line += $SortDirection.ToLower();
+"$line order by the $textOrderBy." | Out-File $OutputFile -Append -Encoding utf8
 "" | Out-File $OutputFile -Append -Encoding utf8
 foreach($contributor in $contributors)
 {
-    $name = $contributor.Names[0];
+    $name = $contributor.PrimaryName;
     $aka = ""
     if ($contributor.Names.Length -gt 1)
     {
@@ -119,6 +154,5 @@ foreach($contributor in $contributors)
     "**$name**$aka contributed $numCommits $commits from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
     "" | Out-File $OutputFile -Append -Encoding utf8
 }
-
 
 Write-Output $contributors
