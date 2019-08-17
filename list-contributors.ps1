@@ -22,7 +22,10 @@ param
 
     [parameter(Mandatory=$false)]
     [ValidateSet("Ascending", "Descending")]
-    [string]$SortDirection = "Ascending"
+    [string]$SortDirection = "Ascending",
+
+    [parameter(Mandatory=$false)]
+    [System.IO.FileInfo]$AkaFilePath
 )
 
 function Test-StringEquality($A, $B)
@@ -53,13 +56,99 @@ function Test-Contributor($contributor, $commit)
     return $emailMatch;
 }
 
+function Get-InitialContributors($akaFilePath)
+{
+    $result = @();
+    $akaFileMustExist = $true;
+    if ($null -eq $AkaFilePath)
+    {
+        $akaFileMustExist = $false;
+        $AkaFilePath = "$PSScriptRoot/.stravaig/list-contributor-akas.json"
+    }
+
+    $pathExists = Test-Path -Path $AkaFilePath;
+
+    if (-not $pathExists)
+    {
+        if ($akaFileMustExist)
+        {
+            throw "The AKA (Also Known As) file at $akaFilePath does not exist."
+        }
+        else 
+        {
+            return (,$result);
+        }
+    }
+
+    try
+    {
+        $akaDetails = Get-Content -Raw -Path $akaFilePath | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch
+    {
+        # For some reason it isn't stopping the script when erroring with 
+        # -ErrorAction Stop in the ConvertFrom-Json 
+        throw $_
+    }
+
+    foreach($person in $akaDetails)
+    {
+        if ($null -eq $person.primaryName)
+        {
+            $fragment = $person | ConvertTo-Json;
+            throw "Each entry must have a `"primaryPerson`" element.`n$fragment";
+        }
+
+        if ($null -eq $person.emails)
+        {
+            $fragment = $person | ConvertTo-Json;
+            throw "Each entry must have a `"emails`" element. If there are no emails supply an empty array.`n$fragment";
+        }
+
+        if ($null -eq $person.akas)
+        {
+            $fragment = $person | ConvertTo-Json;
+            throw "Each entry must have a `"akas`" element. If there are no AKAs supply an empty array.`n$fragment";
+        }
+
+        $contributor = New-Object -TypeName PSObject -Property @{
+            Names=@($person.primaryName);
+            PrimaryName = $person.primaryName;
+            Emails=@();
+            FirstCommit=[DateTime]::MaxValue;
+            LastCommit=[DateTime]::MinValue;
+            CommitCount=0
+        };
+
+        foreach($email in $person.emails)
+        {
+            if (-not (Test-Email -Contributor $contributor -CommitterEmail $email))
+            {
+                $contributor.Emails += $email;
+            }
+        }
+
+        foreach($name in $person.akas)
+        {
+            if (-not (Test-Name -Contributor $contributor -CommitterName $name))
+            {
+                $contributor.Names += $name;
+            }
+        }
+
+        $result += $contributor;
+    }
+
+    return (,$result);
+}
+
+$contributors = Get-InitialContributors($AkaFilePath);
 & git log --format="\`"%ai\`",\`"%an\`",\`"%ae\`"" > raw-contributors.csv
 $commits = Import-Csv raw-contributors.csv -Header Time,Name,Email
 Remove-Item .\raw-contributors.csv
 
 $commitsPerPercentPoint = [Math]::Ceiling($commits.Length / 100)
 $totalCommits = $commits.Length;
-$contributors = @();
 for($i = 0; $i -lt $commits.Length; $i++)
 {
     $nextCommit = $commits[$i];
@@ -107,6 +196,8 @@ for($i = 0; $i -lt $commits.Length; $i++)
 }
 Write-Progress -Activity "Processing" -PercentComplete 100 -Completed
 
+$contributors = $contributors | Where-Object CommitCount -gt 0
+
 $isDescending = $SortDirection -eq "Descending";
 Switch($SortOrder)
 {
@@ -127,6 +218,7 @@ Switch($SortOrder)
         $textOrderBy = "number of commits";
     }
 }
+
 
 "# Contributors" | Out-File $OutputFile -Encoding utf8
 "" | Out-File $OutputFile -Append -Encoding utf8

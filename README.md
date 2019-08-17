@@ -32,6 +32,39 @@ You can also run it as part of a build script to automatically create a list of 
 * `-TimeFormat` is the format that the time will appear in the output file. Defaults to `HH:mm:ss zzz` if omitted.
 * `-SortOrder` orders the contributors list in the output file. It can be one of `Name`, `FirstCommit`, `LastCommit`, or `CommitCount`. Defaults to `Name` if omitted.
 * `-SortDirection` determines the direction of the sort. It can be either `Ascending` or `Descending`. Defaults to `Ascending` if omitted.
+* `-AkaFilePath` is the path to the AKA configuration file. (See **Configuration File** section for more information.)
+
+### Configuration file
+
+It may be that over time commit information has come from various systems, email addresses change, system names are used in preference for real ones, etc. Althought the scrip tries its best to reconcile this, sometimes it isn't possible. You can provide a file of hints so that it knows what entries are equivalent to each other. This is known as an AKA (Also Known As) file. 
+
+By default the script will look for the AKA file relative to the script location, in `.stravaig/list-contributor-akas.json`. This can be overridden with the `-AkaFilePath` parameter. If no path is supplied, and a file is not found in the default location it won't attempt to use this for configuration. However, if a file path is supplied then it must exist.
+
+#### AKA file format
+
+The file is a JSON file, containing a single array of entries.
+
+Each entry must contain a `primaryName`, `akas`, and `emails`.
+```
+[
+  {
+    "primaryName": "Colin Mackay",
+    "akas": [
+      "colin.mackay",
+      "colinangusmackay"
+    ],
+    "emails": [
+      "colin.mackay@TeamCity",
+      "github@colinmackay.scot"
+    ]
+  }
+]
+```
+
+* `primaryName` is the name you want to appear as the primary name for a person on the produced output file.
+* `akas` is an array of also-known-as names. If there are none, supply an empty array. Otherwise provide an array of strings.
+* `emails` is an array of email addresses associated with the person. If there are none, supply an empty array. Otherwise provide an array of strings.
+
 
 ## And finally...
 
