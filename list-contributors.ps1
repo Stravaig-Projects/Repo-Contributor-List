@@ -36,31 +36,27 @@ param
 
 function Test-StringEquality($A, $B)
 {
-    $result = [string]::Compare($A, $B, $true) -eq 0
-    return $result;
+    return [string]::Compare($A, $B, $true) -eq 0
 }
 
 function Test-Name($contributor, $committerName)
 {
-    $nameMatch = $null -ne $contributor.Names.Where({ Test-StringEquality $_ $committerName }, "First", 1)[0];
-    return $nameMatch;
+    return $null -ne $contributor.Names.Where({ Test-StringEquality $_ $committerName }, "First", 1)[0];
 }
 
 function Test-Email($contributor, $committerEmail)
 {
-    $emailMatch = $null -ne $contributor.Emails.Where({ Test-StringEquality $_ $committerEmail }, "First", 1)[0];
-    return $emailMatch;
+    return $null -ne $contributor.Emails.Where({ Test-StringEquality $_ $committerEmail }, "First", 1)[0];
 }
 
 function Test-IgnoredItem($Item, $IgnoredItemsList)
 {
-    $match = $null -ne $IgnoredItemsList.Where({ Test-StringEquality $_ $Item }, "First", 1)[0];
-    return $match;
+    return $null -ne $IgnoredItemsList.Where({ Test-StringEquality $_ $Item }, "First", 1)[0];
 }
 function Test-Contributor($contributor, $commit)
 {
     $nameMatch = Test-Name -Contributor $contributor -Commit $commit.Name;
-    if ($nameMatch){
+    if ($nameMatch) {
         return $true;
     }
 
@@ -83,9 +79,9 @@ function Get-ConfigFilePath($configFilePath, $defaultConfigFilePath, $friendlyNa
     {
         if ($configFileMustExist)
         {
-            throw "The `"$friendlyName`" file at $configFilePath does not exist."
+            throw "The `"$friendlyName`" file at $configFilePath does not exist.";
         }
-        else 
+        else
         {
             return $null;
         }

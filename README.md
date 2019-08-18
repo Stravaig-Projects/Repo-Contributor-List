@@ -32,7 +32,9 @@ You can also run it as part of a build script to automatically create a list of 
 * `-TimeFormat` is the format that the time will appear in the output file. Defaults to `HH:mm:ss zzz` if omitted.
 * `-SortOrder` orders the contributors list in the output file. It can be one of `Name`, `FirstCommit`, `LastCommit`, or `CommitCount`. Defaults to `Name` if omitted.
 * `-SortDirection` determines the direction of the sort. It can be either `Ascending` or `Descending`. Defaults to `Ascending` if omitted.
-* `-AkaFilePath` is the path to the AKA configuration file. (See **Configuration File** section for more information.)
+* `-AkaFilePath` is the path to the AKA configuration file. (See **Configuration Files** section for more information.)
+* `-IgnoredNamesPath` is the path to the ignored names configuration file. (See **Configuration Files** section for more information.)
+* `IgnoredEmailsPath` is the path to the ignored emails configuration file. (See **Configuration Files** section for more information.)
 
 ### Configuration files
 
