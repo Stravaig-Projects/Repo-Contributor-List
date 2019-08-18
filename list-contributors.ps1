@@ -143,20 +143,20 @@ function Get-InitialContributors($akaFilePath)
 }
 
 $contributors = Get-InitialContributors($AkaFilePath);
-& git log --format="\`"%ai\`",\`"%an\`",\`"%ae\`"" > raw-contributors.csv
-$commits = Import-Csv raw-contributors.csv -Header Time,Name,Email
+& git log --format="\`"%ai\`",\`"%an\`",\`"%ae\`",\`"%H\`"" > raw-contributors.csv
+$commits = Import-Csv raw-contributors.csv -Header Time,Name,Email,Hash | Sort-Object Time;
 Remove-Item .\raw-contributors.csv
 
 $commitsPerPercentPoint = [Math]::Ceiling($commits.Length / 100)
 $totalCommits = $commits.Length;
-for($i = 0; $i -lt $commits.Length; $i++)
+for($i = 0; $i -lt $totalCommits; $i++)
 {
     $nextCommit = $commits[$i];
     $commitTime = [DateTime]::ParseExact($nextCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture);
 
     if ($i % $commitsPerPercentPoint -eq 0)
     {
-        $percent = [Math]::Floor($i / $commits.Length * 100);
+        $percent = [Math]::Floor($i / $totalCommits * 100);
         Write-Progress -Activity "Processing" -CurrentOperation "Commit $i of $totalCommits" -PercentComplete $percent
     }
 
@@ -174,14 +174,13 @@ for($i = 0; $i -lt $commits.Length; $i++)
     }
     else 
     {
-        if (-not (Test-Name -Contributor $contributor -CommitterName $nextCommit.Name))
-        {
-            $contributor.Names += $nextCommit.Name;
-        }
-
         if (-not (Test-Email -Contributor $contributor -CommitterEmail $nextCommit.Email))
         {
             $contributor.Emails += $nextCommit.Email;
+        }
+        if (-not (Test-Name -Contributor $contributor -CommitterName $nextCommit.Name))
+        {
+            $contributor.Names += $nextCommit.Name;
         }
         if ($commitTime -lt $contributor.FirstCommit)
         {
@@ -243,7 +242,7 @@ foreach($contributor in $contributors)
         $aka += ")"
     }
     $numCommits = $contributor.CommitCount
-    $commits = "commit"; if ($numCommits -gt 1) { $commits += "s" }
+    $commitMsg = "commit"; if ($numCommits -gt 1) { $commitMsg += "s" }
     $start = $contributor.FirstCommit.ToString($DateTimeFormat);
     if ($contributor.FirstCommit.Date -eq $contributor.LastCommit.Date)
     {
@@ -252,6 +251,24 @@ foreach($contributor in $contributors)
     else {
         $end = $contributor.LastCommit.ToString($DateTimeFormat);        
     }
-    "**$name**$aka contributed $numCommits $commits from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
+    "**$name**$aka contributed $numCommits $commitMsg from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
     "" | Out-File $OutputFile -Append -Encoding utf8
 }
+"## Summary" | Out-File $OutputFile -Append -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
+
+$firstCommit = $commits[0];
+$firstCommitMsg = [DateTime]::ParseExact($firstCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture).ToString($DateTimeFormat);  
+$lastCommit = $commits[$totalCommits - 1];
+$lastCommitMsg = [DateTime]::ParseExact($lastCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture).ToString($DateTimeFormat);  
+
+"This repository has $totalCommits commits in total from $firstCommitMsg until $lastCommitMsg." | Out-File $OutputFile -Append -Encoding utf8
+
+$topCommitter = ($contributors | Sort-Object CommitCount -Descending)[0]
+$name = $topCommitter.PrimaryName;
+$commitCount = $topCommitter.CommitCount;
+$percentage = $topCommitter.CommitCount / $totalCommits;
+
+"The top committer was $name :1st_place_medal: with $commitCount commits which represents "+("{0:P2}" -f $percentage)+" of all commits." | Out-File $OutputFile -Append -Encoding utf8
+
+
