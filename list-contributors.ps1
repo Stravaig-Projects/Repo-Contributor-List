@@ -25,7 +25,13 @@ param
     [string]$SortDirection = "Ascending",
 
     [parameter(Mandatory=$false)]
-    [System.IO.FileInfo]$AkaFilePath
+    [System.IO.FileInfo]$AkaFilePath,
+
+    [parameter(Mandatory=$false)]
+    [System.IO.FileInfo]$IgnoredNamesPath,
+
+    [parameter(Mandatory=$false)]
+    [System.IO.FileInfo]$IgnoredEmailsPath
 )
 
 function Test-StringEquality($A, $B)
@@ -45,6 +51,12 @@ function Test-Email($contributor, $committerEmail)
     $emailMatch = $null -ne $contributor.Emails.Where({ Test-StringEquality $_ $committerEmail }, "First", 1)[0];
     return $emailMatch;
 }
+
+function Test-IgnoredItem($Item, $IgnoredItemsList)
+{
+    $match = $null -ne $IgnoredItemsList.Where({ Test-StringEquality $_ $Item }, "First", 1)[0];
+    return $match;
+}
 function Test-Contributor($contributor, $commit)
 {
     $nameMatch = Test-Name -Contributor $contributor -Commit $commit.Name;
@@ -56,28 +68,90 @@ function Test-Contributor($contributor, $commit)
     return $emailMatch;
 }
 
-function Get-InitialContributors($akaFilePath)
+function Get-ConfigFilePath($configFilePath, $defaultConfigFilePath, $friendlyName)
 {
-    $result = @();
-    $akaFileMustExist = $true;
-    if ($null -eq $AkaFilePath)
+    $configFileMustExist = $true;
+    if ($null -eq $configFilePath)
     {
-        $akaFileMustExist = $false;
-        $AkaFilePath = "$PSScriptRoot/.stravaig/list-contributor-akas.json"
+        $configFileMustExist = $false;
+        $configFilePath = $defaultConfigFilePath;
     }
 
-    $pathExists = Test-Path -Path $AkaFilePath;
+    $pathExists = Test-Path -Path $configFilePath;
 
     if (-not $pathExists)
     {
-        if ($akaFileMustExist)
+        if ($configFileMustExist)
         {
-            throw "The AKA (Also Known As) file at $akaFilePath does not exist."
+            throw "The `"$friendlyName`" file at $configFilePath does not exist."
         }
         else 
         {
-            return (,$result);
+            return $null;
         }
+    }
+    return $configFilePath;
+}
+
+function Get-IgnoredNamesList($IgnoredNamesPath, $AkaContributors)
+{
+    $result = @();
+    foreach($contributor in $AkaContributors)
+    {
+        foreach($name in $contributor.names)
+        {
+            $result += $name;
+            Write-Verbose "Ignoring name `"$name`"";
+        }
+    }
+
+    $IgnoredNamesPath = Get-ConfigFilePath -configFilePath $IgnoredNamesPath -defaultConfigFilePath "$PSScriptRoot/.stravaig/list-contributor-ignore-names.txt" -friendlyName "list of ignored names";    
+    if ($null -ne $IgnoredNamesPath)
+    {
+        $ignoredNames = Get-Content -Path $IgnoredNamesPath;
+        foreach($name in $ignoredNames)
+        {
+            $result += $name;
+            Write-Verbose "Ignoring name `"$name`"";
+        }
+    }
+    $result = $result | Select-Object -Unique;
+    return (,$result);
+}
+
+function Get-IgnoredEmailsList($IgnoredEmailsPath, $AkaContributors)
+{
+    $result = @();
+    foreach($contributor in $AkaContributors)
+    {
+        foreach($email in $contributor.emails)
+        {
+            $result += $email;
+            Write-Verbose "Ignoring email `"$email`"";
+        }
+    }
+
+    $IgnoredEmailsPath = Get-ConfigFilePath -configFilePath $IgnoredEmailsPath -defaultConfigFilePath "$PSScriptRoot/.stravaig/list-contributor-ignore-emails.txt" -friendlyName "list of ignored email addresses";
+    if ($null -ne $IgnoredEmailsPath)
+    {
+        $ignoredEmails = Get-Content -Path $IgnoredEmailsPath;
+        foreach($email in $ignoredEmails)
+        {
+            $result += $email;
+            Write-Verbose "Ignoring email `"$email`"";
+        }
+    }
+    $result = $result | Select-Object -Unique;
+    return (,$result);
+}
+
+function Get-InitialContributors($AkaFilePath)
+{
+    $result = @();
+    $akaFilePath = Get-ConfigFilePath -configFilePath $akaFilePath -defaultConfigFilePath "$PSScriptRoot/.stravaig/list-contributor-akas.json" -friendlyName "AKA (Also Known As)";
+    if ($null -eq $akaFilePath)
+    {
+        return (,$result);
     }
 
     try
@@ -119,12 +193,14 @@ function Get-InitialContributors($akaFilePath)
             LastCommit=[DateTime]::MinValue;
             CommitCount=0
         };
+        Write-Verbose "Adding name `"$($contributor.PrimaryName)`" as primary name from $akaFilePath.";
 
         foreach($email in $person.emails)
         {
             if (-not (Test-Email -Contributor $contributor -CommitterEmail $email))
             {
                 $contributor.Emails += $email;
+                Write-Verbose "Adding email `"$email`" to $($contributor.PrimaryName) from $akaFilePath."
             }
         }
 
@@ -133,6 +209,7 @@ function Get-InitialContributors($akaFilePath)
             if (-not (Test-Name -Contributor $contributor -CommitterName $name))
             {
                 $contributor.Names += $name;
+                Write-Verbose "Adding name `"$name`" to $($contributor.PrimaryName) from $akaFilePath."
             }
         }
 
@@ -142,7 +219,9 @@ function Get-InitialContributors($akaFilePath)
     return (,$result);
 }
 
-$contributors = Get-InitialContributors($AkaFilePath);
+$contributors = Get-InitialContributors -AkaFilePath $AkaFilePath;
+$ignoredNamesList = Get-IgnoredNamesList -IgnoredNamesPath $IgnoredNamesPath -AkaContributors $contributors
+$ignoredEmailsList = Get-IgnoredEmailsList -IgnoredEmailsPath $IgnoredEmailsPath -AkaContributors $contributors
 & git log --format="\`"%ai\`",\`"%an\`",\`"%ae\`",\`"%H\`"" > raw-contributors.csv
 $commits = Import-Csv raw-contributors.csv -Header Time,Name,Email,Hash | Sort-Object Time;
 Remove-Item .\raw-contributors.csv
@@ -169,17 +248,24 @@ for($i = 0; $i -lt $totalCommits; $i++)
             Emails=@($nextCommit.Email); 
             FirstCommit=$commitTime; 
             LastCommit=$commitTime; 
-            CommitCount=1};
+            CommitCount=1
+        };
         $contributors += $contributor;
+        Write-Verbose "Adding name `"$($nextCommit.Name)`" as primary name from commit $($nextCommit.Hash).";
+        Write-Verbose "Adding email `"$($nextCommit.Email)`" to $($contributor.PrimaryName) from commit $($nextCommit.Hash)."
     }
-    else 
+    else
     {
-        if (-not (Test-Email -Contributor $contributor -CommitterEmail $nextCommit.Email))
+        if ((-not(Test-IgnoredItem -Item $nextCommit.Email -IgnoredItemsList $ignoredEmailsList)) -and 
+            (-not (Test-Email -Contributor $contributor -CommitterEmail $nextCommit.Email)))
         {
+            Write-Verbose "Adding email `"$($nextCommit.Email)`" to $($contributor.PrimaryName) from commit $($nextCommit.Hash)."
             $contributor.Emails += $nextCommit.Email;
         }
-        if (-not (Test-Name -Contributor $contributor -CommitterName $nextCommit.Name))
+        if ((-not(Test-IgnoredItem -Item $nextCommit.Name -IgnoredItemsList $ignoredNamesList)) -and 
+            (-not (Test-Name -Contributor $contributor -CommitterName $nextCommit.Name)))
         {
+            Write-Verbose "Adding name `"$($nextCommit.Name)`" to $($contributor.PrimaryName) from commit $($nextCommit.Hash)."
             $contributor.Names += $nextCommit.Name;
         }
         if ($commitTime -lt $contributor.FirstCommit)
@@ -270,5 +356,3 @@ $commitCount = $topCommitter.CommitCount;
 $percentage = $topCommitter.CommitCount / $totalCommits;
 
 "The top committer was $name :1st_place_medal: with $commitCount commits which represents "+("{0:P2}" -f $percentage)+" of all commits." | Out-File $OutputFile -Append -Encoding utf8
-
-
