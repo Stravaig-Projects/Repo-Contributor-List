@@ -333,7 +333,15 @@ foreach($contributor in $contributors)
     else {
         $end = $contributor.LastCommit.ToString($DateTimeFormat);        
     }
-    "**$name**$aka contributed $numCommits $commitMsg from $start to $end" | Out-File $OutputFile -Append -Encoding utf8
+    "**$name**$aka contributed $numCommits $commitMsg" | Out-File $OutputFile -Append -Encoding utf8 -NoNewline
+    if ($numCommits -eq 1)
+    {
+        " on $start." | Out-File $OutputFile -Append -Encoding utf8
+    }
+    else 
+    {
+        " from $start to $end." | Out-File $OutputFile -Append -Encoding utf8
+    }
     "" | Out-File $OutputFile -Append -Encoding utf8
 }
 "## Summary" | Out-File $OutputFile -Append -Encoding utf8
