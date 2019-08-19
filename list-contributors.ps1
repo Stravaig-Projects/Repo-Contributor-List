@@ -353,8 +353,11 @@ $lastCommit = $commits[$totalCommits - 1];
 $lastCommitMsg = [DateTime]::ParseExact($lastCommit.Time, "yyyy-MM-dd HH:mm:ss zzz", [CultureInfo]::InvariantCulture).ToString($DateTimeFormat);  
 
 ":octocat: $totalCommits commits in total." | Out-File $OutputFile -Append -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
 ":date: From $firstCommitMsg." | Out-File $OutputFile -Append -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
 ":date: Until $lastCommitMsg." | Out-File $OutputFile -Append -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
 
 $topCommitters = ($contributors | Sort-Object CommitCount -Descending);
 $topCommitter = $topCommitters[0];
@@ -363,6 +366,7 @@ $commitCount = $topCommitter.CommitCount;
 $percentage = $topCommitter.CommitCount / $totalCommits;
 
 ":1st_place_medal: Gold medal to $name with $commitCount commits which represents "+("{0:P2}" -f $percentage)+" of all commits." | Out-File $OutputFile -Append -Encoding utf8
+"" | Out-File $OutputFile -Append -Encoding utf8
 
 $topCommitter = $topCommitters[1];
 if ($null -ne $topCommitter)
@@ -371,6 +375,7 @@ if ($null -ne $topCommitter)
     $commitCount = $topCommitter.CommitCount;
     $percentage = $topCommitter.CommitCount / $totalCommits;
     ":2nd_place_medal: Silver medal to $name with $commitCount commits which represents "+("{0:P2}" -f $percentage)+" of all commits." | Out-File $OutputFile -Append -Encoding utf8
+    "" | Out-File $OutputFile -Append -Encoding utf8
 }
 
 $topCommitter = $topCommitters[2];
@@ -380,4 +385,5 @@ if ($null -ne $topCommitter)
     $commitCount = $topCommitter.CommitCount;
     $percentage = $topCommitter.CommitCount / $totalCommits;
     ":3rd_place_medal: Bronze medal to $name with $commitCount commits which represents "+("{0:P2}" -f $percentage)+" of all commits." | Out-File $OutputFile -Append -Encoding utf8
+    "" | Out-File $OutputFile -Append -Encoding utf8
 }
