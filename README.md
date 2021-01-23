@@ -36,6 +36,7 @@ You can also run it as part of a build script to automatically create a list of 
 * `-IgnoredNamesPath` is the path to the ignored names configuration file. (See **Configuration Files** section for more information.)
 * `IgnoredEmailsPath` is the path to the ignored emails configuration file. (See **Configuration Files** section for more information.)
 * `HideAKAs` is a switch parameter, when present will hide the AKAs (also known as) from the output so that each contributor is known only by their primary name.
+* `HideSummaryAwards` is a switch parameter, when present will hide the awards section in the summary.
 
 ### Configuration files
 
