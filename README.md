@@ -34,9 +34,9 @@ You can also run it as part of a build script to automatically create a list of 
 * `-SortDirection` determines the direction of the sort. It can be either `Ascending` or `Descending`. Defaults to `Ascending` if omitted.
 * `-AkaFilePath` is the path to the AKA configuration file. (See **Configuration Files** section for more information.)
 * `-IgnoredNamesPath` is the path to the ignored names configuration file. (See **Configuration Files** section for more information.)
-* `IgnoredEmailsPath` is the path to the ignored emails configuration file. (See **Configuration Files** section for more information.)
-* `HideAKAs` is a switch parameter, when present will hide the AKAs (also known as) from the output so that each contributor is known only by their primary name.
-* `HideSummaryAwards` is a switch parameter, when present will hide the awards section in the summary.
+* `-IgnoredEmailsPath` is the path to the ignored emails configuration file. (See **Configuration Files** section for more information.)
+* `-HideAKAs` is a switch parameter, when present will hide the AKAs (also known as) from the output so that each contributor is known only by their primary name.
+* `-HideSummaryAwards` is a switch parameter, when present will hide the awards section in the summary.
 
 ### Configuration files
 
